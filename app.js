@@ -1,6 +1,7 @@
 import express from "express";
 import "dotenv/config";
 import { connectToDatabase, getDb } from "./db/index.js";
+import { ObjectId } from "mongodb";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,6 +27,42 @@ app.post("/products", async (req, res) => {
   } catch (error) {
     console.error("Error creating product:", error);
     res.status(500).json({ error: "Error creating product" });
+  }
+});
+
+app.get("/products", async (req, res) => {
+  try {
+    const db = getDb();
+
+    const products = await db.collection("products").find().toArray();
+    res.status(200).json(products);
+  } catch (error) {
+    console.error("Error creating product:", error);
+    res.status(500).json({ error: "Error to fetch products" });
+  }
+});
+
+app.get("/products/:id", async (req, res) => {
+  try {
+    const db = getDb();
+    const productId = req.params.id;
+
+    if (!ObjectId.isValid(productId)) {
+      return res.status(400).json({ error: "Invalid product ID" });
+    }
+
+    const product = await db
+      .collection("products")
+      .findOne({ _id: new ObjectId(productId) });
+
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    res.status(200).json(product);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    res.status(500).json({ error: "Error fetching product" });
   }
 });
 
